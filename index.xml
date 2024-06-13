@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="./transform.xsl"?>
 <deck xmlns:xlink="http://www.w3.org/1999/xlink">
     <title xml:lang="en">Rider-Waite tarot deck</title>
     <description xml:lang="en">
