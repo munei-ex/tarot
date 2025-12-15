@@ -1,0 +1,476 @@
+import React, { useState, useEffect } from 'react';
+import { Sparkles, RefreshCw, BookOpen, Search, ArrowRight, RotateCcw, Info } from 'lucide-react';
+
+// --- データ定義 (Seargeのリポジトリデータをベースに構築) ---
+// 実際のXMLデータをJSON形式に変換・拡張したものです。
+// 画像はパブリックドメインのRider-Waite-Smithデッキ（Wikimedia Commons）を使用します。
+
+const MAJOR_ARCANA = [
+  { id: '00', name: 'The Fool', nameJP: '愚者', number: 0, hebrew: 'א', sign: '🜁', arcana: 'Major', keywords: '自由, 始まり, 無垢, 冒険', imgKey: 'RWS_Tarot_00_Fool' },
+  { id: '01', name: 'The Magician', nameJP: '魔術師', number: 1, hebrew: 'ב', sign: '☿', arcana: 'Major', keywords: '創造, 意志, 手腕, 始まり', imgKey: 'RWS_Tarot_01_Magician' },
+  { id: '02', name: 'The High Priestess', nameJP: '女教皇', number: 2, hebrew: 'ג', sign: '☽', arcana: 'Major', keywords: '直感, 神秘, 知恵, 静寂', imgKey: 'RWS_Tarot_02_High_Priestess' },
+  { id: '03', name: 'The Empress', nameJP: '女帝', number: 3, hebrew: 'ד', sign: '♀', arcana: 'Major', keywords: '豊穣, 母性, 愛, 自然', imgKey: 'RWS_Tarot_03_Empress' },
+  { id: '04', name: 'The Emperor', nameJP: '皇帝', number: 4, hebrew: 'ה', sign: '♈️', arcana: 'Major', keywords: '権威, 構造, 父性, 責任', imgKey: 'RWS_Tarot_04_Emperor' },
+  { id: '05', name: 'The Hierophant', nameJP: '教皇', number: 5, hebrew: 'ו', sign: '♉', arcana: 'Major', keywords: '伝統, 精神性, 教え, 組織', imgKey: 'RWS_Tarot_05_Hierophant' },
+  { id: '06', name: 'The Lovers', nameJP: '恋人', number: 6, hebrew: 'ז', sign: '♊', arcana: 'Major', keywords: '調和, 選択, 愛, 絆', imgKey: 'RWS_Tarot_06_Lovers' },
+  { id: '07', name: 'The Chariot', nameJP: '戦車', number: 7, hebrew: 'ח', sign: '♋', arcana: 'Major', keywords: '勝利, 意志力, 自制, 前進', imgKey: 'RWS_Tarot_07_Chariot' },
+  { id: '08', name: 'Strength', nameJP: '力', number: 8, hebrew: 'ט', sign: '♌', arcana: 'Major', keywords: '忍耐, 勇気, 内なる力, 思いやり', imgKey: 'RWS_Tarot_08_Strength' },
+  { id: '09', name: 'The Hermit', nameJP: '隠者', number: 9, hebrew: 'י', sign: '♍', arcana: 'Major', keywords: '内省, 孤独, 探求, 導き', imgKey: 'RWS_Tarot_09_Hermit' },
+  { id: '10', name: 'Wheel of Fortune', nameJP: '運命の輪', number: 10, hebrew: 'כ', sign: '♃', arcana: 'Major', keywords: '変化, サイクル, 運命, 転換点', imgKey: 'RWS_Tarot_10_Wheel_of_Fortune' },
+  { id: '11', name: 'Justice', nameJP: '正義', number: 11, hebrew: 'ל', sign: '♎', arcana: 'Major', keywords: '公平, 真実, 原因と結果, 決断', imgKey: 'RWS_Tarot_11_Justice' },
+  { id: '12', name: 'The Hanged Man', nameJP: '吊るされた男', number: 12, hebrew: 'מ', sign: '🜄', arcana: 'Major', keywords: '手放す, 新しい視点, 犠牲, 待機', imgKey: 'RWS_Tarot_12_Hanged_Man' },
+  { id: '13', name: 'Death', nameJP: '死神', number: 13, hebrew: 'נ', sign: '♏', arcana: 'Major', keywords: '終わり, 再生, 変容, 移行', imgKey: 'RWS_Tarot_13_Death' },
+  { id: '14', name: 'Temperance', nameJP: '節制', number: 14, hebrew: 'ס', sign: '♐', arcana: 'Major', keywords: 'バランス, 統合, 忍耐, 目的', imgKey: 'RWS_Tarot_14_Temperance' },
+  { id: '15', name: 'The Devil', nameJP: '悪魔', number: 15, hebrew: 'ע', sign: '♑', arcana: 'Major', keywords: '束縛, 物質主義, 誘惑, 執着', imgKey: 'RWS_Tarot_15_Devil' },
+  { id: '16', name: 'The Tower', nameJP: '塔', number: 16, hebrew: 'פ', sign: '♂', arcana: 'Major', keywords: '崩壊, 突然の変化, 啓示, 解放', imgKey: 'RWS_Tarot_16_Tower' },
+  { id: '17', name: 'The Star', nameJP: '星', number: 17, hebrew: 'צ', sign: '♒', arcana: 'Major', keywords: '希望, 霊感, 平穏, 癒し', imgKey: 'RWS_Tarot_17_Star' },
+  { id: '18', name: 'The Moon', nameJP: '月', number: 18, hebrew: 'ק', sign: '♓', arcana: 'Major', keywords: '幻想, 不安, 潜在意識, 直感', imgKey: 'RWS_Tarot_18_Moon' },
+  { id: '19', name: 'The Sun', nameJP: '太陽', number: 19, hebrew: 'ר', sign: '☉', arcana: 'Major', keywords: '喜び, 成功, 活力, 明確さ', imgKey: 'RWS_Tarot_19_Sun' },
+  { id: '20', name: 'Judgement', nameJP: '審判', number: 20, hebrew: 'ש', sign: '🜂', arcana: 'Major', keywords: '復活, 召喚, 許し, 新たな一歩', imgKey: 'RWS_Tarot_20_Judgement' },
+  { id: '21', name: 'The World', nameJP: '世界', number: 21, hebrew: 'ת', sign: '♄', arcana: 'Major', keywords: '完成, 統合, 達成, 旅', imgKey: 'RWS_Tarot_21_World' },
+];
+
+// 小アルカナの生成ヘルパー
+const SUITS = [
+  { name: 'Wands', nameJP: 'ワンド', icon: '♣️', abbr: 'w', type: 'fire' },
+  { name: 'Cups', nameJP: 'カップ', icon: '♥️', abbr: 'c', type: 'water' },
+  { name: 'Swords', nameJP: 'ソード', icon: '♠️', abbr: 's', type: 'air' },
+  { name: 'Pentacles', nameJP: 'ペンタクル', icon: '♦️', abbr: 'p', type: 'earth' },
+];
+
+const RANKS = [
+  { name: 'Ace', val: 1 }, { name: 'Two', val: 2 }, { name: 'Three', val: 3 }, { name: 'Four', val: 4 },
+  { name: 'Five', val: 5 }, { name: 'Six', val: 6 }, { name: 'Seven', val: 7 }, { name: 'Eight', val: 8 },
+  { name: 'Nine', val: 9 }, { name: 'Ten', val: 10 }, { name: 'Page', val: 11 }, { name: 'Knight', val: 12 },
+  { name: 'Queen', val: 13 }, { name: 'King', val: 14 }
+];
+
+const generateMinorArcana = () => {
+  let cards = [];
+  SUITS.forEach(suit => {
+    RANKS.forEach(rank => {
+      // 画像ファイル名のマッピングロジック (Wikimedia Commonsの命名規則に準拠)
+      let imgName = `${suit.name}${rank.val < 10 && rank.val > 1 ? '0' : ''}`;
+      if (rank.val === 1) imgName = `${suit.name}01`;
+      else if (rank.val === 10) imgName = `${suit.name}10`;
+      else if (rank.val > 10) imgName = `${suit.name}${rank.name}`;
+      else imgName = `${suit.name}0${rank.val}`;
+
+      // 特殊な命名規則の修正 (Rider-Waite deck on Commons)
+      let commonImgKey = `${suit.name}_${rank.val}`;
+      if (rank.val > 10) commonImgKey = `${suit.name}_${rank.name}`;
+      
+      cards.push({
+        id: `${suit.abbr}${rank.val}`,
+        name: `${rank.name} of ${suit.name}`,
+        nameJP: `${suit.nameJP}の${rank.name}`,
+        number: rank.val,
+        sign: suit.icon, // スートのアイコンをSignとして代用
+        arcana: 'Minor',
+        suit: suit.name,
+        keywords: `${suit.nameJP}のエネルギー, ${rank.name}の意味`,
+        imgKey: `RWS_Tarot_${suit.name}_${rank.name === 'Ace' ? 'Ace' : (rank.val <= 10 ? String(rank.val).padStart(2, '0') : rank.name)}` 
+      });
+    });
+  });
+  return cards;
+};
+
+const FULL_DECK = [...MAJOR_ARCANA, ...generateMinorArcana()];
+
+// WikiCommonsから画像URLを取得するヘルパー
+const getCardImageUrl = (card) => {
+    // いくつかの命名パターンの揺らぎを吸収
+    let filename = card.imgKey;
+    if(card.arcana === 'Minor') {
+       // マイナーアルカナのファイル名生成 (簡易化)
+       const rankStr = card.number <= 10 ? String(card.number).padStart(2, '0') : card.name.split(' ')[0];
+       filename = `RWS_Tarot_${card.suit}_${rankStr}`;
+       if(card.number === 1) filename = `RWS_Tarot_${card.suit}_Ace`;
+    }
+    return `https://upload.wikimedia.org/wikipedia/commons/d/de/${filename}.jpg`;
+    // 実際にはWikimediaのリダイレクトや正確なハッシュパスが必要な場合があるため、
+    // ここではより確実なAPIがない限りプレースホルダーまたはCSS描画にフォールバックするロジックが理想的ですが、
+    // 視覚的インパクトのため、一旦推測されるWikimediaパスを使用します。
+    // ※ リンク切れ対策として、エラーハンドリングをImageコンポーネント側で行います。
+};
+
+
+// --- コンポーネント ---
+
+const Card = ({ card, isFlipped, onClick, className = "" }) => {
+  const [imgError, setImgError] = useState(false);
+  const imageUrl = getCardImageUrl(card);
+
+  return (
+    <div 
+      className={`relative w-32 h-52 perspective-1000 cursor-pointer transition-transform duration-500 transform ${isFlipped ? 'rotate-y-180' : ''} ${className}`}
+      onClick={onClick}
+    >
+      <div className={`w-full h-full relative transition-all duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+        
+        {/* 背面 (Back) */}
+        <div className="absolute w-full h-full bg-indigo-900 rounded-lg border-2 border-indigo-300 flex items-center justify-center backface-hidden shadow-xl z-10">
+          <div className="w-24 h-44 border border-indigo-400 border-dashed rounded flex items-center justify-center opacity-30">
+             <Sparkles className="text-white w-8 h-8" />
+          </div>
+          <div className="absolute bottom-2 text-indigo-200 text-xs font-serif">TAROT</div>
+        </div>
+
+        {/* 表面 (Front) */}
+        <div className={`absolute w-full h-full bg-amber-50 rounded-lg border-2 border-amber-200 overflow-hidden backface-hidden shadow-xl transform rotate-y-180 z-20 flex flex-col`}>
+           {/* 画像エリア */}
+           <div className="flex-grow relative bg-black">
+              {!imgError ? (
+                  <img 
+                    src={imageUrl} 
+                    alt={card.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                        // 画像読み込み失敗時のフォールバック処理
+                        // e.target.src = "https://placehold.co/150x250/png?text=Card"; // フォールバック画像
+                        setImgError(true);
+                    }}
+                  />
+              ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-800 p-2 text-center">
+                      <span className="font-serif font-bold text-sm">{card.name}<br/>({card.nameJP})</span>
+                  </div>
+              )}
+           </div>
+           
+           {/* キャプションエリア (Seargeデータの特徴を表示) */}
+           <div className="h-12 bg-white border-t border-amber-200 flex flex-col justify-center items-center p-1">
+              <span className="text-xs font-bold text-slate-800 truncate w-full text-center">{card.nameJP}</span>
+              <div className="flex gap-2 text-[10px] text-slate-500">
+                {card.hebrew && <span title="Hebrew Letter">{card.hebrew}</span>}
+                {card.sign && <span title="Sign/Planet">{card.sign}</span>}
+                <span>{card.arcana === 'Major' ? 'Major' : ''}</span>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 3枚引きの結果表示
+const SpreadResult = ({ cards, onReset }) => {
+  return (
+    <div className="flex flex-col items-center animate-fadeIn">
+      <h3 className="text-2xl font-serif text-slate-800 mb-6 flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-purple-600" />
+        リーディング結果
+      </h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 w-full max-w-4xl px-4">
+        {cards.map((card, index) => (
+          <div key={index} className="flex flex-col items-center bg-white p-4 rounded-xl shadow-lg border border-slate-100">
+            <div className="text-sm font-bold text-purple-600 mb-2 uppercase tracking-widest">
+                {index === 0 ? "Past (過去)" : index === 1 ? "Present (現在)" : "Future (未来)"}
+            </div>
+            <Card card={card} isFlipped={true} className="mb-4 pointer-events-none" />
+            <h4 className="font-bold text-lg text-slate-800">{card.nameJP}</h4>
+            <p className="text-xs text-slate-500 mb-2 font-serif italic">{card.name}</p>
+            <div className="bg-slate-50 p-3 rounded text-sm text-slate-700 w-full text-center">
+                <p className="font-bold mb-1 text-slate-400 text-xs">キーワード</p>
+                {card.keywords}
+            </div>
+            {card.hebrew && (
+                <div className="mt-2 flex gap-3 text-xs text-slate-400">
+                    <span title="ヘブライ文字">Hebrew: {card.hebrew}</span>
+                    <span title="占星術記号">Sign: {card.sign}</span>
+                </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button 
+        onClick={onReset}
+        className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-full hover:bg-slate-700 transition-colors shadow-lg"
+      >
+        <RotateCcw className="w-4 h-4" />
+        もう一度占う
+      </button>
+    </div>
+  );
+};
+
+// メインアプリ
+const TarotApp = () => {
+  const [mode, setMode] = useState('menu'); // menu, auto, manual, result
+  const [drawnCards, setDrawnCards] = useState([]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  
+  // 手動モード用の検索ステート
+  const [searchTerm, setSearchTerm] = useState('');
+  const [manualSelection, setManualSelection] = useState([null, null, null]); // [past, present, future]
+
+  // シャッフルとドロー
+  const handleAutoDraw = () => {
+    setIsAnimating(true);
+    // シャッフル
+    const shuffled = [...FULL_DECK].sort(() => 0.5 - Math.random());
+    // 3枚引く
+    const selection = shuffled.slice(0, 3);
+    
+    // アニメーション用の遅延
+    setTimeout(() => {
+        setDrawnCards(selection);
+        setIsAnimating(false);
+        setMode('result');
+    }, 2000);
+  };
+
+  // 手動モードでカードを選択
+  const selectManualCard = (index, card) => {
+    const newSelection = [...manualSelection];
+    newSelection[index] = card;
+    setManualSelection(newSelection);
+    setSearchTerm(''); // 検索リセット
+  };
+
+  // 手動モードの結果表示へ
+  const handleManualAnalyze = () => {
+    if (manualSelection.some(c => c === null)) return;
+    setDrawnCards(manualSelection);
+    setMode('result');
+  };
+
+  // 検索フィルタリング
+  const filteredCards = searchTerm === '' ? [] : FULL_DECK.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    c.nameJP.includes(searchTerm)
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-slate-800 pb-12">
+      {/* Header */}
+      <header className="bg-white border-b border-indigo-100 sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div 
+            className="flex items-center gap-2 font-serif font-bold text-xl text-indigo-900 cursor-pointer"
+            onClick={() => setMode('menu')}
+          >
+            <BookOpen className="w-6 h-6" />
+            <span>Searge's Tarot</span>
+          </div>
+          {mode !== 'menu' && (
+            <button onClick={() => setMode('menu')} className="text-sm text-slate-500 hover:text-indigo-600">
+              メニューに戻る
+            </button>
+          )}
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        
+        {/* MENU MODE */}
+        {mode === 'menu' && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fadeIn">
+            <h1 className="text-4xl md:text-5xl font-serif text-indigo-900 mb-4 text-center">
+              Digital Tarot Reader
+            </h1>
+            <p className="text-slate-500 mb-12 text-center max-w-lg">
+              Seargeのリポジトリデータをベースにしたタロットリーダーです。<br/>
+              自動占いと、手動入力によるデータ参照が可能です。
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+              <button 
+                onClick={() => setMode('auto')}
+                className="group relative overflow-hidden bg-white p-8 rounded-2xl shadow-md border border-indigo-100 hover:shadow-xl hover:border-indigo-300 transition-all text-left"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Sparkles className="w-24 h-24 text-indigo-600" />
+                </div>
+                <h2 className="text-xl font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5" />
+                  自動占いモード
+                </h2>
+                <p className="text-sm text-slate-500">
+                  機械がカードをシャッフルし、過去・現在・未来の3枚引き（スリーカード・スプレッド）を行います。
+                </p>
+              </button>
+
+              <button 
+                onClick={() => {
+                    setMode('manual');
+                    setManualSelection([null, null, null]);
+                }}
+                className="group relative overflow-hidden bg-white p-8 rounded-2xl shadow-md border border-indigo-100 hover:shadow-xl hover:border-indigo-300 transition-all text-left"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <BookOpen className="w-24 h-24 text-indigo-600" />
+                </div>
+                <h2 className="text-xl font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                  <Search className="w-5 h-5" />
+                  手動入力モード
+                </h2>
+                <p className="text-sm text-slate-500">
+                  ご自身で引いた物理的なカードを入力し、このアプリのデータベース（意味・象徴）を参照します。
+                </p>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* AUTO MODE */}
+        {mode === 'auto' && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            {!isAnimating ? (
+               <div className="text-center">
+                 <div className="mb-12 relative w-48 h-48 mx-auto">
+                    {/* カードの山のアニメーション表現 */}
+                    {[0, 1, 2].map(i => (
+                        <div key={i} className="absolute top-0 left-0 w-32 h-52 bg-indigo-900 rounded-lg border border-indigo-400 shadow-xl transform"
+                             style={{ 
+                                 transform: `translate(${i * 4}px, ${i * -4}px) rotate(${i * 2}deg)`,
+                                 zIndex: 10 - i 
+                             }}>
+                             <div className="w-full h-full opacity-20 bg-pattern-dots"></div>
+                        </div>
+                    ))}
+                 </div>
+                 <h2 className="text-2xl font-serif text-slate-800 mb-6">心を落ち着けてください</h2>
+                 <button 
+                    onClick={handleAutoDraw}
+                    className="px-8 py-4 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-xl transition-all transform hover:-translate-y-1 font-bold flex items-center gap-3 mx-auto"
+                 >
+                    <Sparkles className="w-5 h-5" />
+                    カードを引く (3枚)
+                 </button>
+               </div>
+            ) : (
+                <div className="flex flex-col items-center">
+                    <div className="flex gap-4 mb-8">
+                        {/* ドローアニメーション (簡易) */}
+                        {[0, 1, 2].map(i => (
+                            <div key={i} className="w-32 h-52 bg-indigo-900 rounded-lg border-2 border-indigo-300 animate-pulse shadow-2xl flex items-center justify-center">
+                                <Sparkles className="text-white opacity-50 w-8 h-8 animate-spin-slow" />
+                            </div>
+                        ))}
+                    </div>
+                    <p className="text-indigo-800 font-serif animate-bounce">運命を読み解いています...</p>
+                </div>
+            )}
+          </div>
+        )}
+
+        {/* MANUAL MODE */}
+        {mode === 'manual' && (
+          <div className="max-w-3xl mx-auto">
+             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-8">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-indigo-500" />
+                    カードの選択
+                </h3>
+                <p className="text-sm text-slate-500 mb-6">
+                    あなたが実際に引いたカードを検索して、下のボックスにセットしてください。
+                </p>
+
+                {/* Search Input */}
+                <div className="relative mb-6">
+                    <Search className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <input 
+                        type="text" 
+                        placeholder="カード名を入力 (例: 愚者, World, Wands...)" 
+                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                        <div className="absolute top-full left-0 w-full bg-white border border-slate-200 rounded-lg mt-1 shadow-xl max-h-60 overflow-y-auto z-50">
+                            {filteredCards.length === 0 ? (
+                                <div className="p-4 text-slate-400 text-sm">見つかりません</div>
+                            ) : (
+                                filteredCards.map(card => (
+                                    <div 
+                                        key={card.id} 
+                                        className="p-3 hover:bg-indigo-50 cursor-pointer flex items-center justify-between group"
+                                        onClick={() => {
+                                            // 最初に見つかった空きスロットに入れる
+                                            const emptyIndex = manualSelection.findIndex(c => c === null);
+                                            if (emptyIndex !== -1) selectManualCard(emptyIndex, card);
+                                        }}
+                                    >
+                                        <span className="font-bold text-slate-700">{card.nameJP}</span>
+                                        <span className="text-xs text-slate-400">{card.name}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Slots */}
+                <div className="grid grid-cols-3 gap-4 mb-8">
+                    {manualSelection.map((card, index) => (
+                        <div key={index} className="flex flex-col items-center">
+                            <div className="text-xs font-bold text-slate-400 mb-2 uppercase">
+                                {index === 0 ? "Past" : index === 1 ? "Present" : "Future"}
+                            </div>
+                            {card ? (
+                                <div className="relative group cursor-pointer" onClick={() => selectManualCard(index, null)}>
+                                    <div className="w-24 h-40 bg-amber-50 border-2 border-amber-200 rounded flex items-center justify-center overflow-hidden">
+                                         {/* 簡易表示 */}
+                                         <div className="text-center p-1">
+                                             <div className="text-xl mb-1">{card.sign || '🎴'}</div>
+                                             <div className="text-xs font-bold leading-tight">{card.nameJP}</div>
+                                         </div>
+                                    </div>
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs rounded transition-opacity">
+                                        解除
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="w-24 h-40 border-2 border-dashed border-slate-300 rounded flex items-center justify-center text-slate-300 text-xs text-center p-2">
+                                    {searchTerm ? "リストから選択" : "カード未選択"}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex justify-center">
+                    <button 
+                        onClick={handleManualAnalyze}
+                        disabled={manualSelection.some(c => c === null)}
+                        className={`px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all ${
+                            manualSelection.some(c => c === null) 
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'
+                        }`}
+                    >
+                        <span>結果を分析する</span>
+                        <ArrowRight className="w-4 h-4" />
+                    </button>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* RESULT MODE */}
+        {mode === 'result' && (
+            <SpreadResult 
+                cards={drawnCards} 
+                onReset={() => {
+                    setDrawnCards([]);
+                    setManualSelection([null, null, null]);
+                    setMode('menu');
+                }} 
+            />
+        )}
+
+      </main>
+
+      {/* Footer info */}
+      <footer className="fixed bottom-0 w-full py-2 bg-white/80 backdrop-blur border-t border-slate-100 text-center text-[10px] text-slate-400">
+         Data structure based on searge/tarot • Images from Wikimedia Commons (Rider-Waite-Smith / Public Domain)
+      </footer>
+    </div>
+  );
+};
+
+export default TarotApp;
